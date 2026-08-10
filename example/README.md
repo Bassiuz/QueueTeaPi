@@ -1,8 +1,14 @@
-# The QueueTeaPi Tea Room
+# The QueueTeaPi Tea Room ✿
 
-A small tea room that runs on QueueTeaPi. You order teas and pies; the queue
-makes them. Teas take 200ms, pies take a second — which is the whole point, and
-the reason you can watch a hundred pies drain while two hundred teas fly past.
+A small, extremely pastel tea room that runs on QueueTeaPi `(づ｡◕‿‿◕｡)づ`
+
+You order teas and pies; the queue makes them. Teas take 200ms, pies take a
+second, and showstoppers take a second and a half and fall over half the time —
+which is the whole point, and the reason you can watch a hundred pies drain
+while two hundred teas fly past.
+
+> The example is deliberately cute. The dashboard it mounts at `/queue` is the
+> package's own, and is deliberately not.
 
 ```bash
 cd example
@@ -34,6 +40,26 @@ pins at exactly ten — the dispatcher's `poolSize` — and `served` climbs. Tea
 come out at 50/second, pies at 10/second, which is `poolSize ÷ how long one
 takes`.
 
+**Attempt a showstopper** orders a soufflé, a croquembouche or another hard
+bake. They take 1.5s and **fail half the time**, which is the most realistic
+button on the page — it is what a flaky dependency actually looks like. Each
+retry is a fresh roll of the dice, so with three attempts allowed:
+
+| | |
+| --- | --- |
+| first go | ~50% |
+| second go | ~25% |
+| third go | ~12% |
+| never | ~12% → dead-letter queue |
+
+A run of 40 came out 32 served / 8 given up, with 13 of the survivors needing
+more than one attempt. Served cards show a **`2 tries`** badge when they had to
+be redone, so you can see the retries in the wall itself.
+
+Ordering one inline is worth doing too: half the time `publish()` throws, the
+page tells you what went wrong — and the event is *still in the queue*, so it
+quietly succeeds a few seconds later without you doing anything.
+
 **Drop a tray on purpose** publishes an order whose handler always throws. It
 retries twice with backoff, then lands in the dead-letter queue about nine
 seconds later. Open the dashboard, filter to **Dead**, and press **Replay**.
@@ -51,7 +77,7 @@ queue is the audit log, so the page is just a view of it.
 | `src/queue.ts` | Standing the queue up, and choosing a Firestore |
 | `src/kitchen.ts` | The handlers — the only code here that does real work |
 | `src/server.ts` | Publishing, reading the ledger back, mounting the dashboard |
-| `src/menu.ts` | Teas, pies, and how long each takes |
+| `src/menu.ts` | Teas, pies, showstoppers, and how long each takes |
 | `snippets/` | Short, typechecked examples of other things the package does |
 
 The interesting parts are small on purpose. `kitchen.ts` is one function with a

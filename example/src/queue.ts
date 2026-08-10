@@ -68,11 +68,13 @@ export async function createKitchen(): Promise<Kitchen> {
     },
   })
 
-  // Both event names run the same handler; only the sleep inside differs.
+  // All three event names run the same handler; what differs is how long it
+  // sleeps and, for showstoppers, whether it throws at the end.
   queue.handlers.registerAll({
     kitchen: {
       'brew-tea': prepare,
       'bake-pie': prepare,
+      'bake-showstopper': prepare,
     },
   })
 

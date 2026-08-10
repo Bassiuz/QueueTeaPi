@@ -36,23 +36,40 @@
 
   // ── the buttons ──────────────────────────────────────────────────────────
 
+  var BUSY_LABEL = {
+    tea: 'brewing… ⊂(◉‿◉)つ',
+    pie: 'baking… (っ˘ڡ˘ς)',
+    showstopper: 'attempting… (ง •̀_•́)ง',
+  }
+
   async function orderInline(button, kind) {
     button.disabled = true
+    button.classList.add('working')
+
     var label = button.querySelector('.label')
     var original = label ? label.textContent : ''
-    if (label) label.textContent = kind === 'tea' ? 'Brewing…' : 'Baking…'
+    if (label) label.textContent = BUSY_LABEL[kind] || 'making…'
 
     try {
       // The handler's return value comes back with the response — that is
       // what inline delivery is for. The refresh below picks it up from the
       // ledger too, tagged 'counter'.
-      await api('/api/order/inline?kind=' + kind, { method: 'POST' })
-      showError('')
+      var body = await api('/api/order/inline?kind=' + kind, { method: 'POST' })
+
+      // A showstopper fails about half the time. The event is not lost — it
+      // goes back in the queue and retries on its own — so say so kindly
+      // rather than shouting about an error.
+      showError(
+        body.failed
+          ? 'oh no — ' + body.message + '  …it is back in the queue, it will try again ♡'
+          : '',
+      )
       await refresh()
     } catch (error) {
       showError(error.message)
     } finally {
       if (label) label.textContent = original
+      button.classList.remove('working')
       button.disabled = false
     }
   }
@@ -82,23 +99,26 @@
   function renderTiles(stats) {
     var counts = stats.counts
     var tiles = [
-      tile('in the queue', counts.pending, 'v-pending', stats.dueNow + ' ready now'),
-      tile('being made', counts.leased, 'v-leased', 'handlers running'),
-      tile('served', counts.done, 'v-done', 'total, all time'),
-      tile('dropped', counts.dead, 'v-dead', 'out of retries'),
+      tile('🧺', 'waiting', counts.pending, 'v-pending', stats.dueNow + ' ready now'),
+      tile('👩‍🍳', 'being made', counts.leased, 'v-leased', 'hands in the kitchen'),
+      tile('☕', 'served', counts.done, 'v-done', 'all time ♡'),
+      tile('💔', 'gave up', counts.dead, 'v-dead', 'out of retries'),
       tile(
-        'oldest waiting',
+        '⏰',
+        'longest wait',
         stats.oldestDue ? seconds(stats.oldestDue.waitingMs) : '—',
         '',
-        stats.oldestDue ? stats.oldestDue.name : 'queue is clear',
+        stats.oldestDue ? stats.oldestDue.name : 'nothing waiting ♪',
       ),
     ]
     el('tiles').innerHTML = tiles.join('')
   }
 
-  function tile(label, value, className, sub) {
+  function tile(emoji, label, value, className, sub) {
     return (
       '<div class="tile"><span class="label">' +
+      emoji +
+      ' ' +
       label +
       '</span><span class="value ' +
       className +
@@ -117,11 +137,11 @@
     el('empty').hidden = served.length > 0
 
     el('served-note').textContent = served.length
-      ? 'newest first · showing ' +
+      ? 'newest first · ' +
         served.length +
         ' of ' +
         totalDone +
-        ' from the ledger'
+        ' straight from the ledger'
       : ''
 
     var ids = served.map(function (item) {
@@ -162,19 +182,24 @@
       '<span class="name">' +
       escapeHtml(item.name) +
       '</span>' +
-      '<span class="meta">' +
-      item.kind +
-      ' · made in ' +
+      // Kept short on purpose: these lines have to survive a 160px card
+      // without wrapping. The emoji and the name already say what it is.
+      '<span class="meta">made in ' +
       seconds(item.preparedInMs) +
       '</span>' +
       '<span class="meta">waited ' +
       seconds(item.waitedMs) +
       (retried
-        ? ' · <span class="retried">' + item.attempts + ' attempts</span>'
+        ? ' · <span class="retried">' + item.attempts + ' tries</span>'
         : '') +
       '</span>' +
       '</div>'
     )
+  }
+
+  function hint(kind, text) {
+    var node = document.querySelector('[data-inline="' + kind + '"] .hint')
+    if (node) node.textContent = text
   }
 
   function escapeHtml(value) {
@@ -229,7 +254,7 @@
         .then(function () {
           showError('')
           el('clumsy-note').textContent =
-            'Dropped. It will retry twice, then land in the dead-letter queue — open the dashboard to replay it.'
+            'oops! it retries twice, then waits in the dead-letter queue — open the dashboard to replay it ♡'
         })
         .catch(function (error) {
           showError(error.message)
@@ -271,12 +296,18 @@
       el('collection').textContent = config.collection
       el('clear').hidden = !config.canClear
 
-      var teaHint = document.querySelector('[data-inline="tea"] .hint')
-      var pieHint = document.querySelector('[data-inline="pie"] .hint')
-      if (teaHint) teaHint.textContent = '≈' + seconds(config.teaBrewMs)
-      if (pieHint) pieHint.textContent = '≈' + seconds(config.pieBakeMs)
+      hint('tea', '≈' + seconds(config.teaBrewMs))
+      hint('pie', '≈' + seconds(config.pieBakeMs))
+      hint(
+        'showstopper',
+        '≈' +
+          seconds(config.showstopperBakeMs) +
+          ' · fails ' +
+          Math.round(config.showstopperFailureRate * 100) +
+          '% of the time',
+      )
     } catch (error) {
-      showError('Could not reach the server: ' + error.message)
+      showError('could not reach the server ｡ﾟ(ﾟ´ω`ﾟ)ﾟ｡ ' + error.message)
     }
 
     await refresh()

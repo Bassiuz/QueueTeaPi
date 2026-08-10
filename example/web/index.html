@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The QueueTeaPi Tea Room</title>
+<title>♡ the tea room ♡</title>
 <link rel="stylesheet" href="/styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫖</text></svg>">
 </head>
@@ -12,60 +12,78 @@
 
   <header>
     <div class="title-row">
-      <h1>The Tea Room</h1>
+      <h1>the tea room <span class="sparkle">✿</span></h1>
       <span class="badge" id="mode">…</span>
       <span class="spacer"></span>
-      <a class="link" href="/queue" target="_blank" rel="noopener">Open the queue dashboard ↗</a>
+      <a class="link" href="/queue" target="_blank" rel="noopener">peek at the queue ↗</a>
     </div>
-    <p class="standfirst" id="description">Starting the kitchen…</p>
+    <p class="standfirst">
+      <span class="kao">(づ｡◕‿‿◕｡)づ</span>
+      <span id="description">warming up the pot…</span>
+    </p>
   </header>
 
   <div class="banner" id="error" hidden></div>
 
   <section class="panel">
     <div class="panel-head">
-      <h2>At the counter</h2>
+      <h2>at the counter <span class="soft">— you wait, we make</span></h2>
       <p>Inline delivery. <code>publish()</code> runs the handler itself, so the
-         request waits for the drink — and the button waits with it.</p>
+         request waits for the order — and the button waits with it.</p>
     </div>
     <div class="buttons">
       <button class="order tea" data-inline="tea">
         <span class="glyph">🫖</span>
-        <span class="label">Order a tea</span>
-        <span class="hint">≈200&thinsp;ms</span>
+        <span class="stack">
+          <span class="label">one tea please</span>
+          <span class="hint">≈200ms</span>
+        </span>
       </button>
       <button class="order pie" data-inline="pie">
         <span class="glyph">🥧</span>
-        <span class="label">Order a pie</span>
-        <span class="hint">≈1&thinsp;s</span>
+        <span class="stack">
+          <span class="label">one pie please</span>
+          <span class="hint">≈1s</span>
+        </span>
+      </button>
+      <button class="order show" data-inline="showstopper">
+        <span class="glyph">🍮</span>
+        <span class="stack">
+          <span class="label">a showstopper (๑˃ᴗ˂)ﻭ</span>
+          <span class="hint" id="show-hint">≈1.5s · fails half the time</span>
+        </span>
       </button>
     </div>
   </section>
 
   <section class="panel">
     <div class="panel-head">
-      <h2>Send an order to the kitchen</h2>
+      <h2>a big order <span class="soft">— off to the kitchen it goes</span></h2>
       <p>Queued delivery. Every <code>publish()</code> returns the moment the
          event is written; the dispatcher works through them
-         <strong id="pool-size">…</strong> at a time. Watch the tiles move.</p>
+         <strong id="pool-size">…</strong> at a time. watch the little numbers go ♪</p>
     </div>
     <div class="buttons">
       <div class="bulk">
         <input type="number" id="tea-count" value="200" min="1" max="1000" aria-label="Number of teas">
-        <button class="order tea" data-bulk="tea">Brew this many teas</button>
+        <button class="order tea" data-bulk="tea">🫖 brew this many</button>
       </div>
       <div class="bulk">
         <input type="number" id="pie-count" value="100" min="1" max="1000" aria-label="Number of pies">
-        <button class="order pie" data-bulk="pie">Bake this many pies</button>
+        <button class="order pie" data-bulk="pie">🥧 bake this many</button>
+      </div>
+      <div class="bulk">
+        <input type="number" id="showstopper-count" value="20" min="1" max="1000" aria-label="Number of showstoppers">
+        <button class="order show" data-bulk="showstopper">🍮 attempt this many</button>
       </div>
     </div>
     <div class="buttons secondary">
       <button id="clumsy" title="Publishes an order whose handler always throws">
-        💥 Drop a tray on purpose
+        💥 oopsie, drop a tray
       </button>
-      <button id="clear" hidden>🧹 Clear the ledger</button>
+      <button id="clear" hidden>🧹 tidy up</button>
       <span class="note" id="clumsy-note">
-        Retries with backoff, then dead-letters. Follow it in the dashboard.
+        it retries, then gives up and waits in the dead-letter queue for a hug.
       </span>
     </div>
   </section>
@@ -74,19 +92,22 @@
 
   <section class="served">
     <div class="served-head">
-      <h2>Served</h2>
+      <h2>served <span class="sparkle">♡</span></h2>
       <span class="note" id="served-note"></span>
     </div>
     <div class="grid" id="grid"></div>
-    <p class="empty" id="empty">Nothing has come out of the kitchen yet.</p>
+    <p class="empty" id="empty">
+      <span class="empty-kao">( ˘ ³˘)♥</span>
+      the kitchen is quiet. order something!
+    </p>
   </section>
 
   <footer>
-    <p>Every cup on this page is a <code>done</code> event read back out of the
-       ledger with <code>inspector.list({ status: 'done' })</code> — there is no
-       second data store. Try
+    <p>every cup up there is a <code>done</code> event read back out of the ledger
+       with <code>inspector.list({ status: 'done' })</code> — there is no second
+       data store, the queue <em>is</em> the record. try
        <code>npx queueteapi stats --collection <span id="collection">…</span></code>
-       in another terminal.</p>
+       in another terminal. <span class="kao">ʕ•ᴥ•ʔ</span></p>
   </footer>
 
 </div>

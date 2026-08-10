@@ -10,7 +10,14 @@ import {
 } from 'queueteapi'
 
 import type { Order, Served } from './kitchen.js'
-import { PIE_BAKE_MS, TEA_BREW_MS, pickRandom, type ItemKind } from './menu.js'
+import {
+  PIE_BAKE_MS,
+  SHOWSTOPPER_BAKE_MS,
+  SHOWSTOPPER_FAILURE_RATE,
+  TEA_BREW_MS,
+  pickRandom,
+  type ItemKind,
+} from './menu.js'
 import { COLLECTION, createKitchen } from './queue.js'
 
 /**
@@ -95,6 +102,8 @@ async function route(
       poolSize: POOL_SIZE,
       teaBrewMs: TEA_BREW_MS,
       pieBakeMs: PIE_BAKE_MS,
+      showstopperBakeMs: SHOWSTOPPER_BAKE_MS,
+      showstopperFailureRate: SHOWSTOPPER_FAILURE_RATE,
       servedOnScreen: SERVED_ON_SCREEN,
       canClear: kitchen.memory !== undefined,
     })
@@ -112,7 +121,20 @@ async function route(
 
   if (method === 'POST' && path === '/api/order/inline') {
     const kind = readKind(url.searchParams.get('kind'))
-    return sendJson(response, 200, { served: await orderInline(kind) })
+
+    try {
+      return sendJson(response, 200, { served: await orderInline(kind) })
+    } catch (error) {
+      // Inline delivery rethrows whatever the handler threw. The event is
+      // still in the ledger and will be retried on its own, so this is a
+      // disappointment rather than an error — 200 with the bad news in it, and
+      // the page says so.
+      return sendJson(response, 200, {
+        served: null,
+        failed: true,
+        message: error instanceof Error ? error.message : String(error),
+      })
+    }
   }
 
   if (method === 'POST' && path === '/api/order/bulk') {
@@ -241,11 +263,15 @@ async function servedItems(): Promise<ServedRow[]> {
 // ── plumbing ───────────────────────────────────────────────────────────────
 
 function eventNameFor(kind: ItemKind): string {
-  return kind === 'tea' ? 'brew-tea' : 'bake-pie'
+  if (kind === 'tea') return 'brew-tea'
+  if (kind === 'pie') return 'bake-pie'
+  return 'bake-showstopper'
 }
 
 function readKind(value: string | null): ItemKind {
-  return value === 'pie' ? 'pie' : 'tea'
+  if (value === 'pie') return 'pie'
+  if (value === 'showstopper') return 'showstopper'
+  return 'tea'
 }
 
 function clamp(value: number, low: number, high: number): number {

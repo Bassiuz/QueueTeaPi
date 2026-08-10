@@ -2,7 +2,10 @@ import { PermanentError } from 'queueteapi'
 import type { QueuedEvent } from 'queueteapi'
 
 import {
+  MISHAPS,
+  SHOWSTOPPER_FAILURE_RATE,
   findItem,
+  pickOne,
   preparationMs,
   type ItemKind,
   type MenuItem,
@@ -55,11 +58,18 @@ export async function prepare(event: QueuedEvent<Order>): Promise<Served> {
     // An ordinary Error, so the event is retried with backoff and only
     // dead-lettered once its attempt budget runs out. Watch it happen in the
     // dashboard at /queue.
-    throw new Error(`Dropped the ${item.name} ${item.kind} on the way out`)
+    throw new Error(`Dropped the ${item.name} on the way out ╥﹏╥`)
   }
 
   const takes = preparationMs(item.kind)
   await sleep(takes)
+
+  // Showstoppers fail *after* the work, the way real ones do — you find out at
+  // the end. Every retry is a fresh roll, so most get there in the end and a
+  // few never do.
+  if (item.kind === 'showstopper' && Math.random() < SHOWSTOPPER_FAILURE_RATE) {
+    throw new Error(`${item.name}: ${pickOne(MISHAPS)}`)
+  }
 
   return toServed(item, takes)
 }

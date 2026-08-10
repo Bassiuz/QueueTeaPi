@@ -30,10 +30,10 @@ git clone https://github.com/Bassiuz/QueueTeaPi && cd QueueTeaPi/example
 npm install && npm start
 ```
 
-Opens a tea room at http://localhost:4000 where you order teas (200ms) and pies
-(1s), inline or a hundred at a time, and watch the queue drain — with the
-dashboard mounted at `/queue`. No cloud project, no emulator, no credentials.
-See [`example/`](./example).
+Opens a tea room at http://localhost:4000 where you order teas (200ms), pies
+(1s) and showstoppers (1.5s, and they fail half the time), inline or a hundred
+at a time, and watch the queue drain — with the dashboard mounted at `/queue`.
+No cloud project, no emulator, no credentials. See [`example/`](./example).
 
 ---
 
@@ -659,13 +659,16 @@ at a time. Every cup on the page is a `done` event read back out of the ledger.
 cd example && npm install && npm start
 ```
 
+**Showstoppers** — soufflés, croquembouches — take 1.5s and fail half the time,
+which makes them the most realistic button on the page. Retries, backoff and
+the dead-letter queue stop being abstractions: a run of forty comes out around
+32 served and 8 given up, and the served cards show how many attempts each one
+took.
+
 It runs three ways from the same code — in memory with no setup at all, against
 the Firestore emulator, or against a real project. `example/scripts/scaffold.sh`
 prepares a fresh Google Cloud project: enables the API, creates the database,
 deploys the indexes. It is additive, idempotent, and has a `--dry-run`.
-
-There is also a "drop a tray on purpose" button, so there is something in the
-dead-letter queue to find in the dashboard and replay from the CLI.
 
 ---
 
