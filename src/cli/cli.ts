@@ -106,7 +106,9 @@ async function runList(args: ParsedArgs): Promise<number> {
   }
 
   if (events.length === 0) {
-    console.log('No events matched.')
+    // Naming the collection turns the commonest mistake — forgetting
+    // --collection, and so querying an empty default — into an obvious one.
+    console.log(`No events matched in "${collectionFor(args)}".`)
     return 0
   }
 
@@ -210,10 +212,14 @@ function statusFlag(args: ParsedArgs): EventStatus | undefined {
   return value as EventStatus
 }
 
+function collectionFor(args: ParsedArgs): string {
+  return stringFlag(args.flags, 'collection') ?? DEFAULT_COLLECTION
+}
+
 async function inspectorFor(args: ParsedArgs): Promise<QueueInspector> {
   const queue = new QueueTeaPi({
     firestore: await connectToFirestore(args),
-    collection: stringFlag(args.flags, 'collection') ?? DEFAULT_COLLECTION,
+    collection: collectionFor(args),
   })
   return queue.createInspector()
 }

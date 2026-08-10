@@ -5,18 +5,18 @@ import {
   type AppendInput,
 } from '../src/events/event-store.js'
 import type { StoredEvent } from '../src/events/queued-event.js'
-import { FakeFirestore } from './support/fake-firestore.js'
+import { MemoryFirestore } from '../src/testing/memory-firestore.js'
 import { TestClock } from './support/harness.js'
 
 const COLLECTION = 'ledger'
 
-let firestore: FakeFirestore
+let firestore: MemoryFirestore
 let clock: TestClock
 let store: FirestoreEventStore
 let sequence: number
 
 beforeEach(() => {
-  firestore = new FakeFirestore()
+  firestore = new MemoryFirestore()
   clock = new TestClock()
   sequence = 0
   store = new FirestoreEventStore({
@@ -350,7 +350,7 @@ describe('queries', () => {
 
   it('findOldestDue returns null when nothing is due', async () => {
     const empty = new FirestoreEventStore({
-      firestore: new FakeFirestore(),
+      firestore: new MemoryFirestore(),
       collectionPath: 'empty',
       clock,
     })

@@ -23,6 +23,18 @@ queue.createDispatcher().start()
 That is the whole API surface most applications ever touch: **publish** puts
 events in, **handlers** says what runs them, **dispatcher** moves them.
 
+## Try it in thirty seconds
+
+```bash
+git clone https://github.com/Bassiuz/QueueTeaPi && cd QueueTeaPi/example
+npm install && npm start
+```
+
+Opens a tea room at http://localhost:4000 where you order teas (200ms) and pies
+(1s), inline or a hundred at a time, and watch the queue drain — with the
+dashboard mounted at `/queue`. No cloud project, no emulator, no credentials.
+See [`example/`](./example).
+
 ---
 
 ## Contents
@@ -40,6 +52,7 @@ events in, **handlers** says what runs them, **dispatcher** moves them.
 - [Concurrency: why there are no transactions](#concurrency-why-there-are-no-transactions)
 - [Ordering is not provided](#ordering-is-not-provided)
 - [Migrating from Pub/Sub](#migrating-from-pubsub)
+- [The example app](#the-example-app)
 - [Testing your handlers](#testing-your-handlers)
 - [Test coverage](#test-coverage)
 - [API reference](#api-reference)
@@ -635,15 +648,41 @@ your config, watch it, flip the next. Rollback is deleting one line.
 
 ---
 
+## The example app
+
+[`example/`](./example) is a working tea room: order a random tea (200ms) or a
+random pie (1s) one at a time and wait for it, or send two hundred teas and a
+hundred pies to the kitchen and watch the queue drain at exactly `poolSize`
+at a time. Every cup on the page is a `done` event read back out of the ledger.
+
+```bash
+cd example && npm install && npm start
+```
+
+It runs three ways from the same code — in memory with no setup at all, against
+the Firestore emulator, or against a real project. `example/scripts/scaffold.sh`
+prepares a fresh Google Cloud project: enables the API, creates the database,
+deploys the indexes. It is additive, idempotent, and has a `--dry-run`.
+
+There is also a "drop a tray on purpose" button, so there is something in the
+dead-letter queue to find in the dashboard and replay from the CLI.
+
+---
+
 ## Testing your handlers
 
 The library never imports `firebase-admin`, so a handler test needs no
-emulator, no network and no credentials — just something Firestore-shaped.
-Point it at the emulator instead when you want the real thing.
+emulator, no network and no credentials. `queueteapi/testing` ships an
+in-memory Firestore that enforces the one behaviour that matters — a write
+whose precondition no longer holds is rejected — so contention, lost claims and
+lease recovery behave in a test the way they behave in production.
 
 ```ts
+import { QueueTeaPi } from 'queueteapi'
+import { MemoryFirestore } from 'queueteapi/testing'
+
 const queue = new QueueTeaPi({
-  firestore: yourFirestoreDouble,
+  firestore: new MemoryFirestore(),
   clock: { now: () => 1_700_000_000_000 },   // deterministic timestamps
   generateId: () => 'event-1',               // predictable ids
   random: () => 0,                           // exact backoff, not approximate
@@ -659,6 +698,10 @@ expect(summary.succeeded).toBe(1)
 `runOnce()` is synchronous-ish and returns a summary, so a test never waits on
 a background loop. `clock` and `generateId` are the two things that otherwise
 make queue tests flaky.
+
+`MemoryFirestore` is not a general-purpose emulator — it supports the query
+shapes this package issues and nothing more. For anything else, point
+`firestore` at the real Firestore emulator instead.
 
 ---
 
@@ -709,6 +752,12 @@ peer dependency cannot silently drift out of compatibility.
 
 **Members:** `publish()`, `handlers`, `store`, `collection`, `instanceId`,
 `createDispatcher()`, `createInspector()`, `deliveryFor()`.
+
+### `queueteapi/testing`
+
+`MemoryFirestore` — an in-memory Firestore for tests and local runs. Beyond the
+Firestore surface it also offers `peek()`, `all()`, `seed()`, `clear()`,
+`size`, `writes`, `listenerCount`, and a `failWith` hook for forcing errors.
 
 ### `QueueDispatcher`
 

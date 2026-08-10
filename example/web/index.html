@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The QueueTeaPi Tea Room</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫖</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-row">
+      <h1>The Tea Room</h1>
+      <span class="badge" id="mode">…</span>
+      <span class="spacer"></span>
+      <a class="link" href="/queue" target="_blank" rel="noopener">Open the queue dashboard ↗</a>
+    </div>
+    <p class="standfirst" id="description">Starting the kitchen…</p>
+  </header>
+
+  <div class="banner" id="error" hidden></div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>At the counter</h2>
+      <p>Inline delivery. <code>publish()</code> runs the handler itself, so the
+         request waits for the drink — and the button waits with it.</p>
+    </div>
+    <div class="buttons">
+      <button class="order tea" data-inline="tea">
+        <span class="glyph">🫖</span>
+        <span class="label">Order a tea</span>
+        <span class="hint">≈200&thinsp;ms</span>
+      </button>
+      <button class="order pie" data-inline="pie">
+        <span class="glyph">🥧</span>
+        <span class="label">Order a pie</span>
+        <span class="hint">≈1&thinsp;s</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Send an order to the kitchen</h2>
+      <p>Queued delivery. Every <code>publish()</code> returns the moment the
+         event is written; the dispatcher works through them
+         <strong id="pool-size">…</strong> at a time. Watch the tiles move.</p>
+    </div>
+    <div class="buttons">
+      <div class="bulk">
+        <input type="number" id="tea-count" value="200" min="1" max="1000" aria-label="Number of teas">
+        <button class="order tea" data-bulk="tea">Brew this many teas</button>
+      </div>
+      <div class="bulk">
+        <input type="number" id="pie-count" value="100" min="1" max="1000" aria-label="Number of pies">
+        <button class="order pie" data-bulk="pie">Bake this many pies</button>
+      </div>
+    </div>
+    <div class="buttons secondary">
+      <button id="clumsy" title="Publishes an order whose handler always throws">
+        💥 Drop a tray on purpose
+      </button>
+      <button id="clear" hidden>🧹 Clear the ledger</button>
+      <span class="note" id="clumsy-note">
+        Retries with backoff, then dead-letters. Follow it in the dashboard.
+      </span>
+    </div>
+  </section>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="served">
+    <div class="served-head">
+      <h2>Served</h2>
+      <span class="note" id="served-note"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="empty">Nothing has come out of the kitchen yet.</p>
+  </section>
+
+  <footer>
+    <p>Every cup on this page is a <code>done</code> event read back out of the
+       ledger with <code>inspector.list({ status: 'done' })</code> — there is no
+       second data store. Try
+       <code>npx queueteapi stats --collection <span id="collection">…</span></code>
+       in another terminal.</p>
+  </footer>
+
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

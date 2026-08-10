@@ -6,12 +6,12 @@ import { EventRunner } from '../src/dispatch/event-runner.js'
 import { ConfigurationError, PermanentError } from '../src/errors.js'
 import { FirestoreEventStore } from '../src/events/event-store.js'
 import { HandlerRegistry } from '../src/handlers/handler-registry.js'
-import { FakeFirestore } from './support/fake-firestore.js'
+import { MemoryFirestore } from '../src/testing/memory-firestore.js'
 import { RecordingLogger, TestClock, waitUntil } from './support/harness.js'
 
 const COLLECTION = 'ledger'
 
-let firestore: FakeFirestore
+let firestore: MemoryFirestore
 let clock: TestClock
 let logger: RecordingLogger
 let store: FirestoreEventStore
@@ -19,7 +19,7 @@ let handlers: HandlerRegistry
 let running: QueueDispatcher[]
 
 beforeEach(() => {
-  firestore = new FakeFirestore()
+  firestore = new MemoryFirestore()
   clock = new TestClock()
   logger = new RecordingLogger()
   handlers = new HandlerRegistry()

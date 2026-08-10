@@ -8,7 +8,7 @@
  */
 import { getFirestore } from 'firebase-admin/firestore'
 
-import { HttpEventHandler, QueueTeaPi } from '../src/index.js'
+import { HttpEventHandler, QueueTeaPi } from 'queueteapi'
 
 const queue = new QueueTeaPi({
   firestore: getFirestore(),

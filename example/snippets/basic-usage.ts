@@ -1,13 +1,10 @@
 /**
  * The shape of a normal application: publish events, register handlers, run a
  * dispatcher.
- *
- * These examples import from `../src/index.js` so they are typechecked along
- * with the library. In your own code the import is `from 'queueteapi'`.
  */
 import { getFirestore } from 'firebase-admin/firestore'
 
-import { PermanentError, QueueTeaPi, consoleLogger } from '../src/index.js'
+import { PermanentError, QueueTeaPi, consoleLogger } from 'queueteapi'
 
 interface OrderPlaced {
   orderId: string

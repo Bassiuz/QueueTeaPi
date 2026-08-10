@@ -1,0 +1,27 @@
+{
+  "name": "queueteapi-example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The QueueTeaPi Tea Room — a runnable demo of the queue, its dashboard and its CLI.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "prestart": "npm --prefix .. run build",
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "emulator": "npx --yes --package firebase-tools firebase emulators:exec --only firestore --project queueteapi-example \"npm start\"",
+    "typecheck": "tsc --noEmit",
+    "scaffold": "bash scripts/scaffold.sh"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.0",
+    "queueteapi": "file:.."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

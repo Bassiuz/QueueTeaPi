@@ -4,7 +4,7 @@ import { DEFAULT_COLLECTION } from '../src/config/queue-config.js'
 import { ConfigurationError } from '../src/errors.js'
 import { HandlerRegistry } from '../src/handlers/handler-registry.js'
 import { QueueTeaPi } from '../src/queue-tea-pi.js'
-import { FakeFirestore } from './support/fake-firestore.js'
+import { MemoryFirestore } from '../src/testing/memory-firestore.js'
 import { COLLECTION, createHarness } from './support/harness.js'
 
 describe('construction', () => {
@@ -19,12 +19,12 @@ describe('construction', () => {
 
   it('rejects an empty collection path', () => {
     expect(
-      () => new QueueTeaPi({ firestore: new FakeFirestore(), collection: '   ' }),
+      () => new QueueTeaPi({ firestore: new MemoryFirestore(), collection: '   ' }),
     ).toThrow(/must not be empty/)
   })
 
   it('defaults the collection', () => {
-    const queue = new QueueTeaPi({ firestore: new FakeFirestore() })
+    const queue = new QueueTeaPi({ firestore: new MemoryFirestore() })
     expect(queue.collection).toBe(DEFAULT_COLLECTION)
   })
 

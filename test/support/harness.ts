@@ -1,7 +1,7 @@
 import { QueueTeaPi, type QueueTeaPiOptions } from '../../src/index.js'
 import type { Clock } from '../../src/support/clock.js'
 import type { LogLevel, Logger } from '../../src/support/logger.js'
-import { FakeFirestore } from './fake-firestore.js'
+import { MemoryFirestore } from '../../src/testing/memory-firestore.js'
 
 /** A clock the test drives by hand. */
 export class TestClock implements Clock {
@@ -54,7 +54,7 @@ export const COLLECTION = 'test-events'
 
 export interface Harness {
   queue: QueueTeaPi
-  firestore: FakeFirestore
+  firestore: MemoryFirestore
   clock: TestClock
   logger: RecordingLogger
   /** Every event document currently in the ledger. */
@@ -71,7 +71,7 @@ export interface Harness {
 export function createHarness(
   overrides: Partial<QueueTeaPiOptions> = {},
 ): Harness {
-  const firestore = new FakeFirestore()
+  const firestore = new MemoryFirestore()
   const clock = new TestClock()
   const logger = new RecordingLogger()
 

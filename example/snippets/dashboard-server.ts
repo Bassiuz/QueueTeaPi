@@ -12,7 +12,7 @@ import {
   QueueTeaPi,
   createDashboard,
   createNodeRequestListener,
-} from '../src/index.js'
+} from 'queueteapi'
 
 const queue = new QueueTeaPi({
   firestore: getFirestore(),

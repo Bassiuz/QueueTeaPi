@@ -10,19 +10,13 @@
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": false,
 
-    "declaration": true,
-    "sourceMap": true,
     "noEmit": true,
-
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "allowImportingTsExtensions": false
   },
-  "include": ["src", "test", "vitest.config.ts", "tsup.config.ts"]
+  "include": ["src", "snippets"]
 }

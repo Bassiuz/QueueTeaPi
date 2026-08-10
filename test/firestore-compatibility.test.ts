@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { FirestoreLike } from '../src/firestore/firestore-types.js'
 import { QueueTeaPi } from '../src/queue-tea-pi.js'
-import { FakeFirestore } from './support/fake-firestore.js'
+import { MemoryFirestore } from '../src/testing/memory-firestore.js'
 
 /**
  * The point of this file is the *types*, not the assertions.
@@ -27,6 +27,6 @@ describe('firebase-admin compatibility', () => {
 
   it('the in-memory double satisfies the same interface', () => {
     const accepts = (firestore: FirestoreLike): FirestoreLike => firestore
-    expect(accepts(new FakeFirestore())).toBeInstanceOf(FakeFirestore)
+    expect(accepts(new MemoryFirestore())).toBeInstanceOf(MemoryFirestore)
   })
 })

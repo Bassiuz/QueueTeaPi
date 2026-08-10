@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 export default defineConfig([
   {
-    entry: { index: 'src/index.ts' },
+    entry: { index: 'src/index.ts', testing: 'src/testing/index.ts' },
     format: ['esm', 'cjs'],
     // Declarations come from `tsc -p tsconfig.build.json` instead, so the
     // types are emitted by the same compiler that typechecks the source.

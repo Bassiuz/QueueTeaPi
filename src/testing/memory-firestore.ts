@@ -11,36 +11,54 @@ import type {
   Unsubscribe,
   WhereOperator,
   WriteResultLike,
-} from '../../src/firestore/firestore-types.js'
+} from '../firestore/firestore-types.js'
 
 /**
- * An in-memory Firestore that implements exactly the behaviour QueueTeaPi
- * relies on — including the one behaviour the whole design rests on:
- * `update()` with a `lastUpdateTime` precondition fails when the document has
- * changed since it was read.
+ * An in-memory Firestore, for tests and for running an app with no cloud
+ * project at all.
  *
- * Versions are a monotonically increasing counter rather than a timestamp,
- * which is both easier to reason about in a test and closer to what the
+ * ```ts
+ * import { QueueTeaPi } from 'queueteapi'
+ * import { MemoryFirestore } from 'queueteapi/testing'
+ *
+ * const queue = new QueueTeaPi({ firestore: new MemoryFirestore() })
+ * ```
+ *
+ * It implements exactly the behaviour QueueTeaPi relies on — including the one
+ * the whole design rests on: `update()` with a `lastUpdateTime` precondition
+ * fails when the document has changed since it was read. Contention, lost
+ * claims and lease recovery therefore behave here the way they behave in
+ * production.
+ *
+ * Document versions are a monotonically increasing counter rather than a
+ * timestamp, which is easier to reason about and closer to what the
  * precondition actually means: "the same revision I read".
+ *
+ * It is **not** a general-purpose Firestore emulator. It supports the query
+ * shapes this package issues — equality and range filters, `orderBy`, `limit`,
+ * `count()` and `onSnapshot` — and nothing more. For anything else, reach for
+ * the real Firestore emulator.
+ *
+ * Everything is lost when the process exits.
  */
 
 /** The error a real Firestore raises when a precondition does not hold. */
-export class FakePreconditionError extends Error {
+export class PreconditionFailedError extends Error {
   readonly code = 9
 
   constructor(path: string) {
     super(`Document "${path}" has changed since it was read.`)
-    this.name = 'FakePreconditionError'
+    this.name = 'PreconditionFailedError'
   }
 }
 
 /** The error a real Firestore raises when updating a missing document. */
-export class FakeNotFoundError extends Error {
+export class DocumentMissingError extends Error {
   readonly code = 5
 
   constructor(path: string) {
     super(`No document to update: ${path}`)
-    this.name = 'FakeNotFoundError'
+    this.name = 'DocumentMissingError'
   }
 }
 
@@ -72,7 +90,7 @@ export type FailureHook = (
   path: string,
 ) => void
 
-export class FakeFirestore implements FirestoreLike {
+export class MemoryFirestore implements FirestoreLike {
   private readonly documents = new Map<string, StoredDocument>()
   private readonly listeners = new Set<() => void>()
   private nextVersion = 1
@@ -84,7 +102,7 @@ export class FakeFirestore implements FirestoreLike {
   readonly writes: Array<{ path: string; operation: string }> = []
 
   collection(collectionPath: string): CollectionReferenceLike {
-    return new FakeCollectionReference(this, collectionPath)
+    return new MemoryCollectionReference(this, collectionPath)
   }
 
   // ── inspection helpers for tests ────────────────────────────────────────
@@ -104,6 +122,23 @@ export class FakeFirestore implements FirestoreLike {
   /** How many snapshot listeners are currently attached. */
   get listenerCount(): number {
     return this.listeners.size
+  }
+
+  /** How many documents are stored, across every collection. */
+  get size(): number {
+    return this.documents.size
+  }
+
+  /**
+   * Empties the store.
+   *
+   * Listeners stay attached and are notified, so a dispatcher watching this
+   * instance keeps working against the now-empty collection.
+   */
+  clear(): void {
+    this.documents.clear()
+    this.writes.length = 0
+    this.notify()
   }
 
   /** Writes a document directly, bypassing preconditions. */
@@ -155,13 +190,13 @@ export class FakeFirestore implements FirestoreLike {
     this.writes.push({ path, operation: 'update' })
 
     const stored = this.documents.get(path)
-    if (stored === undefined) throw new FakeNotFoundError(path)
+    if (stored === undefined) throw new DocumentMissingError(path)
 
     if (
       precondition?.lastUpdateTime !== undefined &&
       precondition.lastUpdateTime !== stored.version
     ) {
-      throw new FakePreconditionError(path)
+      throw new PreconditionFailedError(path)
     }
 
     const version = this.nextVersion++
@@ -231,9 +266,9 @@ export class FakeFirestore implements FirestoreLike {
   }
 }
 
-class FakeQuery implements QueryLike {
+class MemoryQuery implements QueryLike {
   constructor(
-    protected readonly firestore: FakeFirestore,
+    protected readonly firestore: MemoryFirestore,
     protected readonly collectionPath: string,
     protected readonly state: QueryState = {
       filters: [],
@@ -243,21 +278,21 @@ class FakeQuery implements QueryLike {
   ) {}
 
   where(field: string, operator: WhereOperator, value: unknown): QueryLike {
-    return new FakeQuery(this.firestore, this.collectionPath, {
+    return new MemoryQuery(this.firestore, this.collectionPath, {
       ...this.state,
       filters: [...this.state.filters, { field, operator, value }],
     })
   }
 
   orderBy(field: string, direction: OrderDirection = 'asc'): QueryLike {
-    return new FakeQuery(this.firestore, this.collectionPath, {
+    return new MemoryQuery(this.firestore, this.collectionPath, {
       ...this.state,
       sorts: [...this.state.sorts, { field, direction }],
     })
   }
 
   limit(count: number): QueryLike {
-    return new FakeQuery(this.firestore, this.collectionPath, {
+    return new MemoryQuery(this.firestore, this.collectionPath, {
       ...this.state,
       limit: count,
     })
@@ -287,12 +322,12 @@ class FakeQuery implements QueryLike {
   }
 }
 
-class FakeCollectionReference
-  extends FakeQuery
+class MemoryCollectionReference
+  extends MemoryQuery
   implements CollectionReferenceLike
 {
   doc(documentId: string): DocumentReferenceLike {
-    return new FakeDocumentReference(
+    return new MemoryDocumentReference(
       this.firestore,
       `${this.collectionPath}/${documentId}`,
       documentId,
@@ -300,9 +335,9 @@ class FakeCollectionReference
   }
 }
 
-class FakeDocumentReference implements DocumentReferenceLike {
+class MemoryDocumentReference implements DocumentReferenceLike {
   constructor(
-    private readonly firestore: FakeFirestore,
+    private readonly firestore: MemoryFirestore,
     private readonly path: string,
     readonly id: string,
   ) {}
