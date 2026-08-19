@@ -1,0 +1,33 @@
+{
+  "//": "Indexes QueueTeaPi needs. Replace `queueteapi-events` with your collection name if you configured a different one, then: firebase deploy --only firestore:indexes",
+  "indexes": [
+    {
+      "//": "Claiming due work, and counting the backlog.",
+      "collectionGroup": "queueteapi-events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "//": "The sweep, reclaiming leases whose worker died.",
+      "collectionGroup": "queueteapi-events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "leaseExpiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "//": "The dashboard and CLI listing one status, newest first.",
+      "collectionGroup": "queueteapi-events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
