@@ -39,20 +39,41 @@ const PORT = Number(process.env.PORT ?? 4000)
 /** Handlers running at once. Low enough that a bulk order visibly drains. */
 const POOL_SIZE = Number(process.env.QUEUE_POOL_SIZE ?? 10)
 
-/** How many served items the page shows. The ledger keeps all of them. */
-const SERVED_ON_SCREEN = 150
-
 const WEB_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', 'web')
 
 const kitchen = await createKitchen()
 const { queue } = kitchen
 const inspector = queue.createInspector()
 
+/**
+ * Whether reads cost money here.
+ *
+ * Memory and the emulator are free, so the demo can be as impatient as it
+ * likes — that impatience is the point, it is what lets you watch a hundred
+ * pies drain. A real project is metered, and the same settings there read 150
+ * documents nearly three times a second, which empties a free-tier daily
+ * quota in about two minutes of watching.
+ */
+const METERED = kitchen.mode === 'project'
+
+/** How many served items the page shows. The ledger keeps all of them. */
+const SERVED_ON_SCREEN = METERED ? 50 : 150
+
+/** How often the page refetches. Every pass re-reads the served list. */
+const POLL_MS = METERED ? 5_000 : 400
+
+// ponytail: throttling is enough for a demo you watch for a few minutes. The
+// real fix is a listener on `status == 'done'` feeding an in-memory list, so
+// polls cost nothing and each completion costs one read — worth building if
+// this page ever becomes something people leave open.
+
 const dispatcher = queue.createDispatcher({
   poolSize: POOL_SIZE,
   batchSize: 50,
   // A pie needs a second; give the sweep something to do on a human timescale.
-  sweepIntervalMs: 2_000,
+  // Each sweep is two queries, so on a metered project that alone would spend
+  // ~86k reads a day doing nothing.
+  sweepIntervalMs: METERED ? 30_000 : 2_000,
 })
 dispatcher.start()
 
@@ -105,6 +126,8 @@ async function route(
       showstopperBakeMs: SHOWSTOPPER_BAKE_MS,
       showstopperFailureRate: SHOWSTOPPER_FAILURE_RATE,
       servedOnScreen: SERVED_ON_SCREEN,
+      pollMs: POLL_MS,
+      metered: METERED,
       canClear: kitchen.memory !== undefined,
     })
   }

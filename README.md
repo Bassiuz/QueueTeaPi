@@ -424,6 +424,13 @@ Routes, if you would rather build your own UI:
 > requeue work. Mount it behind whatever protects the rest of your admin
 > surface, and set `readOnly` where you would not hand someone a console.
 
+**Reads cost money, so the page is idle by default.** Auto-refresh is off until
+you tick the box, and even then it stops while the tab is hidden and resumes
+when you come back. `/api/stats` runs aggregate queries whose cost grows with
+the size of the ledger rather than being capped by a limit, so its result is
+cached for two seconds and shared: ten open dashboards cost what one does.
+Replaying invalidates that cache, so counts never look stale after you act.
+
 ### The CLI
 
 ```bash

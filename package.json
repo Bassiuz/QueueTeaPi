@@ -39,6 +39,8 @@
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
+    "prepack": "npm run build",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "keywords": [

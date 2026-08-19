@@ -7,7 +7,9 @@
 ;(function () {
   'use strict'
 
-  var POLL_MS = 400
+  // Overridden by /api/config, which slows the page right down when the
+  // Firestore behind it is a real, metered project.
+  var pollMs = 400
 
   var config = null
   var pollTimer = null
@@ -228,7 +230,7 @@
 
   function startPolling() {
     stopPolling()
-    pollTimer = setInterval(refresh, POLL_MS)
+    pollTimer = setInterval(refresh, pollMs)
   }
 
   function stopPolling() {
@@ -289,6 +291,7 @@
   async function boot() {
     try {
       config = await api('/api/config')
+      if (config.pollMs) pollMs = config.pollMs
 
       el('mode').textContent = config.mode + ' mode'
       el('description').textContent = config.description

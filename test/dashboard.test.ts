@@ -93,6 +93,45 @@ describe('GET /api/stats', () => {
       total: 1,
     })
   })
+
+  /**
+   * `stats()` runs aggregate queries whose cost grows with the ledger, so
+   * every open tab hitting Firestore on its own timer is how this dashboard
+   * runs up a bill. These two tests pin the cache that prevents it.
+   */
+  it('serves repeated and concurrent calls from one inspector query', async () => {
+    let calls = 0
+    const counting = createDashboard({
+      inspector: {
+        ...inspector,
+        stats: async () => {
+          calls += 1
+          return inspector.stats()
+        },
+      } as unknown as QueueInspector,
+    })
+
+    await counting({ method: 'GET', path: '/api/stats' })
+    await counting({ method: 'GET', path: '/api/stats' })
+    await Promise.all([
+      counting({ method: 'GET', path: '/api/stats' }),
+      counting({ method: 'GET', path: '/api/stats' }),
+    ])
+
+    expect(calls).toBe(1)
+  })
+
+  it('reflects a replay immediately rather than serving stale counts', async () => {
+    const id = await aDeadEvent()
+
+    expect(body(await dashboard({ method: 'GET', path: '/api/stats' })).counts)
+      .toMatchObject({ dead: 1, pending: 0 })
+
+    await dashboard({ method: 'POST', path: `/api/events/${id}/replay` })
+
+    expect(body(await dashboard({ method: 'GET', path: '/api/stats' })).counts)
+      .toMatchObject({ dead: 0, pending: 1 })
+  })
 })
 
 describe('GET /api/events', () => {

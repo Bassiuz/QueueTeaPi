@@ -171,6 +171,24 @@ its default collection and finds nothing.
 Turn `QUEUE_POOL_SIZE` down to 2 and order a hundred pies to see the queue
 really back up; turn it up to 50 to watch it disappear.
 
+### The demo is deliberately impatient, except where that costs money
+
+Memory and emulator reads are free, so the page refetches every 400ms and the
+dispatcher sweeps every 2s — that impatience is what lets you watch a hundred
+pies drain in real time.
+
+In `project` mode all three back off, because there the same settings read 150
+documents nearly three times a second, which is a free-tier daily quota gone in
+about two minutes of watching:
+
+| | memory / emulator | project |
+| --- | --- | --- |
+| Page refetch | every 400ms | every 5s |
+| Served items on screen | 150 | 50 |
+| Dispatcher sweep | every 2s | every 30s |
+
+The page also stops polling entirely while its tab is hidden, in every mode.
+
 ---
 
 ## Notes

@@ -128,7 +128,7 @@ export function renderDashboardPage(options: {
     <button id="refresh">Refresh</button>
     <button id="replay-all" class="primary">Replay all dead</button>
     <span class="spacer"></span>
-    <label class="muted"><input type="checkbox" id="auto" checked> auto-refresh</label>
+    <label class="muted"><input type="checkbox" id="auto"> auto-refresh</label>
   </div>
 
   <div class="table-wrap">
@@ -292,11 +292,25 @@ export function renderDashboardPage(options: {
     } catch (error) { showError(error.message); }
   });
 
+  // Auto-refresh is off by default and stops while the tab is hidden. Each
+  // pass costs real Firestore reads, and a dashboard left open on a forgotten
+  // laptop should not quietly bill a project all weekend.
   function applyAuto() {
     clearInterval(timer);
-    if (el('auto').checked) timer = setInterval(refresh, 4000);
+    timer = null;
+    if (el('auto').checked && !document.hidden) {
+      timer = setInterval(refresh, 4000);
+    }
   }
+
   el('auto').addEventListener('change', applyAuto);
+
+  document.addEventListener('visibilitychange', function () {
+    // Coming back to a stale page should show the truth immediately; leaving
+    // should cost nothing.
+    if (!document.hidden && el('auto').checked) refresh();
+    applyAuto();
+  });
 
   refresh();
   applyAuto();
